@@ -98,6 +98,12 @@ void Cube::setVoxel(Point p, Color col)
     this->setVoxel(p.x, p.y, p.z, col);
 }
 
+// Set a pixel at an arbitrary position in the chain.
+void Cube::setPixel(uint16_t p, Color col)
+{
+    this->strip.setPixelColor(p, this->strip.Color(col.red, col.green, col.blue));
+}
+
 /** Get the color of a voxel at a position.
 
     @param x, y, z Coordinate of the LED to get the color from.
