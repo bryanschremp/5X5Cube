@@ -1,4 +1,4 @@
-#include "5X5Cube/5X5Cube.h"
+#include "5x5Cube/5x5Cube.h"
 
 Cube cube = Cube();
 
