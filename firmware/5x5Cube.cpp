@@ -1,5 +1,5 @@
 #include <math.h>
-#include "cube.h"
+#include "5x5Cube.h"
 
 SYSTEM_MODE(SEMI_AUTOMATIC);
 
