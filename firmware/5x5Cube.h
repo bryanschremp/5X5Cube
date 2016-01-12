@@ -693,6 +693,7 @@ class Cube
 
         void setVoxel(int x, int y, int z, Color col);
         void setVoxel(Point p, Color col);
+        void setPixel(uint16_t p, Color col);
         Color getVoxel(int x, int y, int z);
         Color getVoxel(Point p);
         void line(int x1, int y1, int z1, int x2, int y2, int z2, Color col);
