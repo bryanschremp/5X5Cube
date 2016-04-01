@@ -25,7 +25,6 @@
 
 #define STREAMING_PORT 2222
 
-#define MICROPHONE 12
 #define X 13
 #define Y 14
 #define Z 15
