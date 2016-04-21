@@ -30,7 +30,7 @@ void Cube::begin(void)
 {
     this->strip.begin();
     this->strip.setBrightness(maxBrightness);
-    this->center = point(this->size / 2, this->size / 2, this->size / 2);
+    // this->center = point(this->size / 2, this->size / 2, this->size / 2);
 }
 
 /*
@@ -61,7 +61,7 @@ bool operator== (const Color& a, const Color& b)
 void Cube::setVoxel(int x, int y, int z, color* col)
 {
     int index = ((z * (size * size)) + ((x * size) + y));
-    this->strip.setPixelColor(index, this->strip.color(col.green, col.red, col.blue));
+    this->strip.setPixelColor(index, this->strip.Color(col->green, col->red, col->blue));
 }
 
 /** Set a voxel at a position to a color.
@@ -77,18 +77,23 @@ void Cube::setVoxel(point p, color* col)
 // Set a pixel at an arbitrary position in the chain.
 void Cube::setPixel(uint16_t p, color* col)
 {
-    this->strip.setPixelColor(p, this->strip.color(col.red, col.green, col.blue));
+    this->strip.setPixelColor(p, this->strip.Color(col->red, col->green, col->blue));
 }
 
 /** Get the color of a voxel at a position.
 
     @param x, y, z Coordinate of the LED to get the color from.
 */
-Color Cube::getVoxel(int x, int y, int z)
+color Cube::getVoxel(int x, int y, int z)
 {
     int index = (z * this->size * this->size) + (x * this->size) + y;
+    
     uint32_t col = this->strip.getPixelColor(index);
-    color pixelColor = color((col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
+    
+    color pixelColor; // = color((col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
+    pixelColor.red = (col >> 16) & 255;
+    pixelColor.green = (col >> 8) & 255;
+    pixelColor.blue = col & 255;
     return pixelColor;
 }
     
@@ -96,11 +101,12 @@ Color Cube::getVoxel(int x, int y, int z)
 
     @param p Coordinate of the LED to get the color from.
 */
+/*
 Color Cube::getVoxel(point p)
 {
     return this->getVoxel(p.x, p.y, p.z);
 }
-
+*/
 /** Draw a line in 3D space.
     Uses the 3D form of Bresenham's algorithm.
 
@@ -108,6 +114,7 @@ Color Cube::getVoxel(point p)
     @param x2, y2, z2 Coordinate of end of line.
     @param col Color of the line.
 */
+/*
 void Cube::line(int x1, int y1, int z1, int x2, int y2, int z2, color* col)
 {
     point currentPoint = point(x1, y1, z1);
@@ -206,7 +213,7 @@ void Cube::line(int x1, int y1, int z1, int x2, int y2, int z2, color* col)
 
     this->setVoxel(currentPoint, col);
 }
-
+*/
 /** Draw a line in 3D space.
     Uses the 3D form of Bresenham's algorithm.
 
@@ -214,152 +221,23 @@ void Cube::line(int x1, int y1, int z1, int x2, int y2, int z2, color* col)
     @param p2 Coordinate of end of line.
     @param col Color of the line.
 */
+/*
 void Cube::line(point p1, point p2, color* col)
 {
     this->line(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, col);
 }
-
-/** Draw a filled sphere.
-
-    @param x, y, z Position of the center of the sphere.
-    @param r Radius of the sphere.
-    @param col Color of the sphere.
 */
-void Cube::sphere(int x, int y, int z, int r, color* col)
-{
-    for (int dx = -r; dx <= r; dx++)
-    {
-        for (int dy = -r; dy <= r; dy++)
-        {
-            for (int dz = -r; dz <= r; dz++)
-            {
-                if (sqrt(dx * dx + dy * dy + dz * dz) <= r)
-                {
-                    this->setVoxel(x + dx, y + dy, z + dz, col);
-                }
-            }
-        }
-    }
-}
-
-/** Draw a filled sphere.
-
-    @param p Position of the center of the sphere.
-    @param r Radius of the sphere.
-    @param col Color of the sphere.
-*/
-void Cube::sphere(point p, int r, color* col)
-{
-    this->sphere(p.x, p.y, p.z, r, col);
-}
-
-/** Draw a shell (empty sphere).
-
-    @param x Position of the center of the shell.
-    @param y Position of the center of the shell.
-    @param z Position of the center of the shell.
-    @param r Radius of the shell.
-    @param col Color of the shell.
-*/
-void Cube::shell(float x, float y, float z, float r, color* col)
-{
-    float thickness = 0.1;
-    for (int i = 0; i < this->size; i++)
-        for (int j = 0; j < this->size; j++)
-            for (int k = 0; k < this->size; k++)
-                if (abs(sqrt((i - x, 2) + pow(j - y, 2) + pow(k - z, 2)) - r) < thickness)
-                    this->setVoxel(i, j, k, col);
-}
-
-/** Draw a shell (empty sphere).
-
-    @param x Position of the center of the shell.
-    @param y Position of the center of the shell.
-    @param z Position of the center of the shell.
-    @param r Radius of the shell.
-    @param thickness Thickness of the shell.
-    @param col Color of the shell.
-*/
-void Cube::shell(float x, float y, float z, float r, float thickness, color* col)
-{
-    for (int i = 0; i < this->size; i++)
-        for (int j = 0; j < this->size; j++)
-            for (int k = 0; k < this->size; k++)
-                if (abs(sqrt(pow(i - x, 2) + pow(j - y, 2) + pow(k - z, 2)) - r) < thickness)
-                    this->setVoxel(i, j, k, col);
-}
-
-/** Draw a shell (empty sphere).
-
-    @param p Position of the center of the shell.
-    @param r Radius of the shell.
-    @param col Color of the shell.
-*/
-void Cube::shell(point p, float r, color* col)
-{
-    this->shell(p.x, p.y, p.z, r, col);
-}
-
-/** Draw a shell (empty sphere).
-
-    @param p Position of the center of the shell.
-    @param r Radius of the shell.
-    @param thickness Thickness of the shell
-    @param col Color of the shell.
-*/
-void Cube::shell(point p, float r, float thickness, color* col)
-{
-    this->shell(p.x, p.y, p.z, r, thickness, col);
-}
-
-/** Draw an empty circle in the XZ plane.
-    Uses the midpoint circle algorithm.
-
-    @param p Position of the center of the circle.
-    @param r Radius of the circle.
-    @param col Color of the circle.
-*/
-void Cube::emptyFlatCircle(int x, int y, int z, int r, color* col)
-{
-    int dx = r;
-    int dy = 0;
-    int radiusError = 1 - dx;
-
-    while (dx >= dy)
-    {
-        this->setVoxel(x + dx,  y, z + dy, col);
-        this->setVoxel(x + dy,  y, z + dx, col);
-        this->setVoxel(x + -dx, y, z + dy, col);
-        this->setVoxel(x + -dy, y, z + dx, col);
-        this->setVoxel(x + -dx, y, z + -dy, col);
-        this->setVoxel(x + -dy, y, z + -dx, col);
-        this->setVoxel(x + dx,  y, z + -dy, col);
-        this->setVoxel(x + dy,  y, z + -dx, col);
-
-        dy++;
-
-        if (radiusError < 0)
-        {
-            radiusError += 2 * dy + 1;
-        }
-        else
-        {
-            dx--;
-            radiusError += 2 * (dy - dx + 1);
-        }
-    }
-}
 
 /** Set the entire cube to one color.
 
     @param col The color to set all LEDs in the cube to.
 */
-void Cube::background(color* col)
+void Cube::background(color col)
 {
     for (int x = 0; x < this->size; x++)
         for (int y = 0; y < this->size; y++)
             for (int z = 0; z < this->size; z++)
-                this->setVoxel(x, y, z, col);
+                this->setVoxel(x, y, z, &col);
 }
 
 /** Map a value into a color.
@@ -371,7 +249,7 @@ void Cube::background(color* col)
 
     @return Color from value.
 */
-color colorMap(float val, float min, float max)
+color Cube::colorMap(float val, float min, float max)
 {
     float range = 1024;
     val = range * (val - min) / (max - min);
@@ -469,7 +347,7 @@ Color Cube::colorMap(float val, float minVal, float maxVal)
 
     @return Color between colors a and b.
 */
-color lerpColor(color* a, color* b, int val, int min, int max)
+color Cube::lerpColor(color* a, color* b, int val, int min, int max)
 {
     color lerped;
     lerped.red = a->red + (b->red-a->red) * (val-min) / (max-min);
