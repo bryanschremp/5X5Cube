@@ -1,8 +1,6 @@
 #include <math.h>
 #include "5x5Cube.h"
 
-SYSTEM_MODE(SEMI_AUTOMATIC);
-
 /** Construct a new cube.
     @param s Size of one side of the cube in number of LEDs.
     @param mb Maximum brightness value. Used to prevent the LEDs from drawing too much current (which causes the colors to distort).
@@ -11,13 +9,8 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 */
 Cube::Cube(unsigned int s, unsigned int mb) : \
     maxBrightness(mb),
-    onlinePressed(true),
-    lastOnline(true),
     strip(Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE)),
-    size(s),
-    // initialize Text members
-    done(false),
-    looping(false)
+    size(s)
 { }
 
 /** Construct a new cube with default settings.
@@ -28,14 +21,8 @@ Cube::Cube(unsigned int s, unsigned int mb) : \
 */
 Cube::Cube() : \
     maxBrightness(50),
-    onlinePressed(true),
-    lastOnline(true),
     strip(Adafruit_NeoPixel(PIXEL_COUNT, PIXEL_PIN, PIXEL_TYPE)),
-    size(5),
-    // initialize Text members
-    done(false),
-    looping(false),
-    selectedFont(CUBE_FONT)
+    size(5)
 { }
 
 /** Initialization of cube resources and environment. */
@@ -44,19 +31,8 @@ void Cube::begin(void)
     this->strip.begin();
     this->strip.setBrightness(maxBrightness);
     this->center = Point(this->size / 2, this->size / 2, this->size / 2);
-    this->selectedFont = FontType::CUBE_FONT;
     // initialize Spark variables
     int (Cube::*setPort)(String) = &Cube::setPort;
-
-    Particle.variable("IPAddress", this->localIP, STRING);
-    Particle.variable("MACAddress", this->macAddress, STRING);
-    Particle.variable("port", &this->port, INT);
-    Particle.function("setPort", (int (*)(String)) setPort);
-
-    this->initButtons();
-    this->udp.begin(STREAMING_PORT);
-    this->updateNetworkInfo();
-    Particle.connect();
 }
 
 /** Overloaded != operator. */
@@ -465,196 +441,4 @@ Color Cube::lerpColor(Color a, Color b, int val, int minVal, int maxVal)
 void Cube::show()
 {
     this->strip.show();
-    if (this->onlinePressed)
-    {
-        Particle.process();
-        this->listen(); // we're forcing the cube to listen for UDP streaming
-    }
-}
-
-/** Initialize online/offline switch and the join wifi button */
-void Cube::initButtons()
-{
-    //set the input mode for the 'connect to cloud' button
-    pinMode(INTERNET_BUTTON, INPUT_PULLUP);
-    pinMode(MODE, INPUT_PULLUP);
-
-    if (!digitalRead(MODE))
-        WiFi.listen();
-
-    //a.k.a. onlinePressed is HIGH when the switch is set to 'online' and LOW when the switch is set to 'offline'
-    this->onlinePressed = !digitalRead(INTERNET_BUTTON);
-
-    if (this->onlinePressed)
-        Particle.connect();
-
-    void (Cube::*check)(void) = &Cube::onlineOfflineSwitch;
-    attachInterrupt(INTERNET_BUTTON, (void (*)())check, CHANGE);
-
-    void (Cube::*wifi)(void) = &Cube::joinWifi;
-    attachInterrupt(MODE, (void (*)())wifi, FALLING);
-}
-
-/** react to a change of the online/offline switch */
-void Cube::onlineOfflineSwitch()
-{
-    // if the 'connect to cloud' button is pressed, try to connect to wifi.
-    // otherwise, run the program
-
-    // onlinePressed is HIGH when the switch is _not_ connected and LOW when the switch is connected
-    // a.k.a. onlinePressed is HIGH when the switch is set to 'online' and LOW when the switch is set to 'offline'
-    this->onlinePressed = !digitalRead(INTERNET_BUTTON);
-
-    if ((!this->onlinePressed) && (this->lastOnline))
-    {
-        //marked as 'online'
-        this->lastOnline = this->onlinePressed;
-        Particle.connect();
-    }
-    else if ((this->onlinePressed) && (!this->lastOnline))
-    {
-        // marked as 'offline'
-        this->lastOnline = this->onlinePressed;
-        Particle.disconnect();
-    }
-
-    this->lastOnline = this->onlinePressed;
-
-}
-
-void Cube::joinWifi()
-{
-    WiFi.listen();
-}
-
-/** Listen for the start of UDP streaming. */
-void Cube::listen()
-{
-    int32_t bytesrecv = this->udp.parsePacket();
-
-    // no data, nothing to do
-    if (bytesrecv == 0) return;
-
-    if (millis() - this->lastUpdated > 60000)
-    {
-        //update the network settings every minute
-        this->updateNetworkInfo();
-        this->lastUpdated = millis();
-    }
-
-    if (bytesrecv == PIXEL_COUNT)
-    {
-        char data[PIXEL_COUNT];
-        this->udp.read(data, bytesrecv);
-
-        for (int x = 0; x < this->size; x++)
-        {
-            for (int y = 0; y < this->size; y++)
-            {
-                for (int z = 0; z < this->size; z++)
-                {
-                    int index = z * this->size + y * this->size + x;
-                    Color pixelColor = Color((data[index] & 0xE0) >> 2, (data[index] & 0x1C) << 1, (data[index] & 0x03) << 4); //colors with max brightness set to 64
-                    this->setVoxel(x, y, z, pixelColor);
-                }
-            }
-        }
-    }
-
-    this->show();
-}
-
-/** Updates the variables related to the accelerometer
-    updates accelerometerX, accelerometerY and accelerometerZ, which are directly read from the analog pins, minus 2048 to remove the DC bias
-
-    calculates theta and phi, which are the 3D rotation angles
-*/
-void Cube::updateAccelerometer()
-{
-    this->accelerometerX = analogRead(X) - 2048;
-    this->accelerometerY = analogRead(Y) - 2048;
-    this->accelerometerZ = analogRead(Z) - 2048;
-    this->theta = atan(this->accelerometerX / sqrt(pow(this->accelerometerY, 2) + pow(this->accelerometerZ, 2))) * 180 / 3.14;
-    this->phi = atan(this->accelerometerY / sqrt(pow(this->accelerometerX, 2) + pow(this->accelerometerZ, 2))) * 180 / 3.14;
-}
-
-/** Update the cube's knowledge of its own network address. */
-void Cube::updateNetworkInfo()
-{
-    IPAddress myIp = WiFi.localIP();
-    sprintf(this->localIP, "%d.%d.%d.%d", myIp[0], myIp[1], myIp[2], myIp[3]);
-    byte macAddr[6];
-    WiFi.macAddress(macAddr);
-    sprintf(this->macAddress, "%02x:%02x:%02x:%02x:%02x:%02x", macAddr[5], macAddr[4], macAddr[3], macAddr[2], macAddr[1], macAddr[0]);
-}
-
-/** Function to be called via Spark API for updating the streaming port number.
-    Resets the UDP connection with the new port.
-
-    @param _port A decimal number in a String, corresponding to the desired port number.
-*/
-int Cube::setPort(String _port)
-{
-    this->port = _port.toInt();
-    this->udp.begin(this->port);
-    return this->port;
-}
-
-/** Text functions. */
-void Cube::showChar(char a, Point p, Color col)
-{
-    for (int row = 0; row < this->size; row++)
-        for (int bit = 0; bit < 8; bit++)
-            if (((font[((int)a + this->selectedFont) * 8 + row] >> (7 - bit)) & 0x01) == 1)
-                this->setVoxel(p.x + bit, (p.y) + (this->size - 1 - row), p.z, col);
-}
-
-void Cube::showChar(char a, Point origin, Point angle, Color col)
-{
-    this->showChar(a, origin, Point(0, 0, 0), angle, col);
-}
-
-void Cube::showChar(char a, Point origin, Point pivot, Point angle, Color col)
-{
-    for (int row = 0; row < this->size; row++)
-        for (int bit = 0; bit < 8; bit++)
-            if (((font[((int)a + this->selectedFont) * 8 + (7 - row)] >> (7 - bit)) & 0x01) == 1)
-                this->setVoxel(origin.x + ((float)bit - pivot.x)*cos(angle.y),
-                               origin.y + ((float)row - pivot.y)*cos(angle.x),
-                               origin.z + ((float)row - pivot.y)*sin(angle.x) + ((float)bit - pivot.y)*sin(angle.y), col);
-}
-
-void Cube::scrollSpinningText(std::string text, Point initialPosition, Color col)
-{
-    for (int i = 0; i < text.length(); i++)
-        this->showChar(text.at(i), Point(this->size * i - initialPosition.x, initialPosition.y, initialPosition.z), Point(0, initialPosition.x, 0), col);
-}
-
-void Cube::scrollText(std::string text, Point initialPosition, Color col)
-{
-    for (int i = 0; i < text.length(); i++)
-        this->showChar(text.at(i), Point(this->size * i - initialPosition.x, initialPosition.y, initialPosition.z), col);
-}
-
-void Cube::marquee(std::string text, float pos, Color col)
-{
-    for (int i = 0; i < text.length(); i++)
-        this->showMarqueeChar(text.at(i), (int)pos - this->size * i, col);
-}
-
-void Cube::showMarqueeChar(char a, int pos, Color col)
-{
-    for (int row = 0; row < this->size; row++)
-        for (int bit = 0; bit < 8; bit++)
-            if (((font[((int)a + this->selectedFont) * 8 + row] >> (7 - bit)) & 0x01) == 1)
-            {
-                if ((pos - bit) < this->size)
-                    this->setVoxel(this->size - 1, this->size - 1 - row, pos - bit, col);
-                if (((pos - bit) >= this->size) && ((pos - bit) < 2 * this->size))
-                    this->setVoxel((this->size - 1) - (pos - bit - this->size), this->size - 1 - row, this->size - 1, col);
-                if (((pos - bit) >= 2 * this->size) && ((pos - bit) < 3 * this->size))
-                    this->setVoxel(0, this->size - 1 - row, this->size - 1 - (pos - bit - 2 * this->size), col);
-                if ((pos - bit) > 3 * this->size)
-                    this->setVoxel(pos - bit - 3 * this->size, this->size - 1 - row, 0, col);
-            }
 }
