@@ -30,12 +30,11 @@ void Cube::begin(void)
 {
     this->strip.begin();
     this->strip.setBrightness(maxBrightness);
-    this->center = Point(this->size / 2, this->size / 2, this->size / 2);
-    // initialize Spark variables
-    int (Cube::*setPort)(String) = &Cube::setPort;
+    this->center = point(this->size / 2, this->size / 2, this->size / 2);
 }
 
-/** Overloaded != operator. */
+/*
+// Overloaded != operator.
 bool operator!= (const Color& a, const Color& b)
 {
     if (a.red != b.red) return true;
@@ -44,7 +43,7 @@ bool operator!= (const Color& a, const Color& b)
     return false;
 }
 
-/** Overloaded == operator. */
+// Overloaded == operator.
 bool operator== (const Color& a, const Color& b)
 {
     if (a.red != b.red) return false;
@@ -52,16 +51,17 @@ bool operator== (const Color& a, const Color& b)
     if (a.blue != b.blue) return false;
     return true;
 }
+*/
 
 /** Set a voxel at a position to a color.
 
     @param x, y, z Coordinate of the LED to set.
     @param col Color to set the LED to.
 */
-void Cube::setVoxel(int x, int y, int z, Color col)
+void Cube::setVoxel(int x, int y, int z, color* col)
 {
     int index = ((z * (size * size)) + ((x * size) + y));
-    this->strip.setPixelColor(index, this->strip.Color(col.green, col.red, col.blue));
+    this->strip.setPixelColor(index, this->strip.color(col.green, col.red, col.blue));
 }
 
 /** Set a voxel at a position to a color.
@@ -69,15 +69,15 @@ void Cube::setVoxel(int x, int y, int z, Color col)
     @param p Coordinate of the LED to set.
     @param col Color to set the LED to.
 */
-void Cube::setVoxel(Point p, Color col)
+void Cube::setVoxel(point p, color* col)
 {
     this->setVoxel(p.x, p.y, p.z, col);
 }
 
 // Set a pixel at an arbitrary position in the chain.
-void Cube::setPixel(uint16_t p, Color col)
+void Cube::setPixel(uint16_t p, color* col)
 {
-    this->strip.setPixelColor(p, this->strip.Color(col.red, col.green, col.blue));
+    this->strip.setPixelColor(p, this->strip.color(col.red, col.green, col.blue));
 }
 
 /** Get the color of a voxel at a position.
@@ -88,15 +88,15 @@ Color Cube::getVoxel(int x, int y, int z)
 {
     int index = (z * this->size * this->size) + (x * this->size) + y;
     uint32_t col = this->strip.getPixelColor(index);
-    Color pixelColor = Color((col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
+    color pixelColor = color((col >> 16) & 0xff, (col >> 8) & 0xff, col & 0xff);
     return pixelColor;
 }
-
+    
 /** Get the color of a voxel at a position.
 
     @param p Coordinate of the LED to get the color from.
 */
-Color Cube::getVoxel(Point p)
+Color Cube::getVoxel(point p)
 {
     return this->getVoxel(p.x, p.y, p.z);
 }
@@ -108,9 +108,9 @@ Color Cube::getVoxel(Point p)
     @param x2, y2, z2 Coordinate of end of line.
     @param col Color of the line.
 */
-void Cube::line(int x1, int y1, int z1, int x2, int y2, int z2, Color col)
+void Cube::line(int x1, int y1, int z1, int x2, int y2, int z2, color* col)
 {
-    Point currentPoint = Point(x1, y1, z1);
+    point currentPoint = point(x1, y1, z1);
 
     int dx = x2 - x1;
     int dy = y2 - y1;
@@ -214,7 +214,7 @@ void Cube::line(int x1, int y1, int z1, int x2, int y2, int z2, Color col)
     @param p2 Coordinate of end of line.
     @param col Color of the line.
 */
-void Cube::line(Point p1, Point p2, Color col)
+void Cube::line(point p1, point p2, color* col)
 {
     this->line(p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, col);
 }
@@ -225,7 +225,7 @@ void Cube::line(Point p1, Point p2, Color col)
     @param r Radius of the sphere.
     @param col Color of the sphere.
 */
-void Cube::sphere(int x, int y, int z, int r, Color col)
+void Cube::sphere(int x, int y, int z, int r, color* col)
 {
     for (int dx = -r; dx <= r; dx++)
     {
@@ -248,7 +248,7 @@ void Cube::sphere(int x, int y, int z, int r, Color col)
     @param r Radius of the sphere.
     @param col Color of the sphere.
 */
-void Cube::sphere(Point p, int r, Color col)
+void Cube::sphere(point p, int r, color* col)
 {
     this->sphere(p.x, p.y, p.z, r, col);
 }
@@ -261,7 +261,7 @@ void Cube::sphere(Point p, int r, Color col)
     @param r Radius of the shell.
     @param col Color of the shell.
 */
-void Cube::shell(float x, float y, float z, float r, Color col)
+void Cube::shell(float x, float y, float z, float r, color* col)
 {
     float thickness = 0.1;
     for (int i = 0; i < this->size; i++)
@@ -280,7 +280,7 @@ void Cube::shell(float x, float y, float z, float r, Color col)
     @param thickness Thickness of the shell.
     @param col Color of the shell.
 */
-void Cube::shell(float x, float y, float z, float r, float thickness, Color col)
+void Cube::shell(float x, float y, float z, float r, float thickness, color* col)
 {
     for (int i = 0; i < this->size; i++)
         for (int j = 0; j < this->size; j++)
@@ -295,7 +295,7 @@ void Cube::shell(float x, float y, float z, float r, float thickness, Color col)
     @param r Radius of the shell.
     @param col Color of the shell.
 */
-void Cube::shell(Point p, float r, Color col)
+void Cube::shell(point p, float r, color* col)
 {
     this->shell(p.x, p.y, p.z, r, col);
 }
@@ -307,7 +307,7 @@ void Cube::shell(Point p, float r, Color col)
     @param thickness Thickness of the shell
     @param col Color of the shell.
 */
-void Cube::shell(Point p, float r, float thickness, Color col)
+void Cube::shell(point p, float r, float thickness, color* col)
 {
     this->shell(p.x, p.y, p.z, r, thickness, col);
 }
@@ -319,7 +319,7 @@ void Cube::shell(Point p, float r, float thickness, Color col)
     @param r Radius of the circle.
     @param col Color of the circle.
 */
-void Cube::emptyFlatCircle(int x, int y, int z, int r, Color col)
+void Cube::emptyFlatCircle(int x, int y, int z, int r, color* col)
 {
     int dx = r;
     int dy = 0;
@@ -354,7 +354,7 @@ void Cube::emptyFlatCircle(int x, int y, int z, int r, Color col)
 
     @param col The color to set all LEDs in the cube to.
 */
-void Cube::background(Color col)
+void Cube::background(color* col)
 {
     for (int x = 0; x < this->size; x++)
         for (int y = 0; y < this->size; y++)
@@ -371,6 +371,49 @@ void Cube::background(Color col)
 
     @return Color from value.
 */
+color colorMap(float val, float min, float max)
+{
+    float range = 1024;
+    val = range * (val - min) / (max - min);
+    color colors[6];
+    colors[0].red = 0;
+    colors[0].green = 0;
+    colors[0].blue = this->maxBrightness;
+
+    colors[1].red = 0;
+    colors[1].green = this->maxBrightness;
+    colors[1].blue = this->maxBrightness;
+
+    colors[2].red = 0;
+    colors[2].green = this->maxBrightness;
+    colors[2].blue = 0;
+
+    colors[3].red = this->maxBrightness;
+    colors[3].green = this->maxBrightness;
+    colors[3].blue = 0;
+
+    colors[4].red = this->maxBrightness;
+    colors[4].green = 0;
+    colors[4].blue = 0;
+
+    colors[5].red = this->maxBrightness;
+    colors[5].green = 0;
+    colors[5].blue =this->maxBrightness;
+
+    if (val <= range / 6)
+        return (this->lerpColor(&colors[0], &colors[1], val, 0, range / 6));
+    else if (val <= 2 * range / 6)
+        return (this->lerpColor(&colors[1], &colors[2], val, range / 6, 2 * range / 6));
+    else if (val <= 3 * range / 6)
+        return (this->lerpColor(&colors[2], &colors[3], val, 2 * range / 6, 3 * range / 6));
+    else if (val <= 4 * range / 6)
+        return (this->lerpColor(&colors[3], &colors[4], val, 3 * range / 6, 4 * range / 6));
+    else if (val <= 5 * range / 6)
+        return (this->lerpColor(&colors[4], &colors[5], val, 4 * range / 6, 5 * range / 6));
+    else
+        return (this->lerpColor(&colors[5], &colors[0], val, 5 * range / 6, range));
+}
+/*
 Color Cube::colorMap(float val, float minVal, float maxVal)
 {
     const float range = 1024;
@@ -415,7 +458,7 @@ Color Cube::colorMap(float val, float minVal, float maxVal)
     else
         return (this->lerpColor(colors[5], colors[0], val, 5 * range / 6, range));
 }
-
+*/
 /** Linear interpolation between colors.
 
     @param a, b The colors to interpolate between.
@@ -426,18 +469,27 @@ Color Cube::colorMap(float val, float minVal, float maxVal)
 
     @return Color between colors a and b.
 */
+color lerpColor(color* a, color* b, int val, int min, int max)
+{
+    color lerped;
+    lerped.red = a->red + (b->red-a->red) * (val-min) / (max-min);
+    lerped.green = a->green + (b->green-a->green) * (val-min) / (max-min);
+    lerped.blue = a->blue + (b->blue-a->blue) * (val-min) / (max-min);
+    return lerped;
+}
+/*
 Color Cube::lerpColor(Color a, Color b, int val, int minVal, int maxVal)
 {
     int red = a.red + (b.red - a.red) * (val - minVal) / (maxVal - minVal);
     int green = a.green + (b.green - a.green) * (val - minVal) / (maxVal - minVal);
     int blue = a.blue + (b.blue - a.blue) * (val - minVal) / (maxVal - minVal);
 
-    return Color(red, green, blue);
+    return color(red, green, blue);
 }
-
-/** Make changes to the cube visible.
-    Causes pixel data to be written to the LED strips.
 */
+
+// Make changes to the cube visible.
+//  Causes pixel data to be written to the LED strips.
 void Cube::show()
 {
     this->strip.show();
