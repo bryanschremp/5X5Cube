@@ -9,29 +9,47 @@
 #define PIXEL_TYPE WS2812B
 
 // An RGB color.
-typedef struct // struct Color
+struct Color
 {
     unsigned char red, green, blue;
-    // Color(int r, int g, int b) : red(r), green(g), blue(b) {}
-    // Color() : red(0), green(0), blue(0) {}
-} color;
+
+    Color(int r, int g, int b) : red(r), green(g), blue(b) {}
+    Color() : red(0), green(0), blue(0) {}
+};
+
+// Common colors.
+const Color black     = Color(0x00, 0x00, 0x00);
+const Color grey      = Color(0x92, 0x95, 0x91);
+const Color yellow    = Color(0xff, 0xff, 0x14);
+const Color magenta   = Color(0xc2, 0x00, 0x78);
+const Color orange    = Color(0xf9, 0x73, 0x06);
+const Color teal      = Color(0x02, 0x93, 0x86);
+const Color red       = Color(0xe5, 0x00, 0x00);
+const Color brown     = Color(0x65, 0x37, 0x00);
+const Color pink      = Color(0xff, 0x81, 0xc0);
+const Color blue      = Color(0x03, 0x43, 0xdf);
+const Color green     = Color(0x15, 0xb0, 0x1a);
+const Color purple    = Color(0x7e, 0x1e, 0x9c);
+const Color white     = Color(0xff, 0xff, 0xff);
 
 // A point in 3D space.
-typedef struct // struct Point
+struct Point
 {
-    int x;
-    int y;
-    int z;
-    // Point() : x(0), y(0), z(0) {}
-    // Point(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
-} point;
+    float x;
+    float y;
+    float z;
+    Point() : x(0), y(0), z(0) {}
+    Point(float _x, float _y, float _z) : x(_x), y(_y), z(_z) {}
+};
 
 // Overloaded != operator.
-// bool operator!= (const Color& a, const Color& b);
+bool operator!= (const Color& a, const Color& b);
 
 // Overloaded == operator.
-// bool operator== (const Color& a, const Color& b);
+bool operator== (const Color& a, const Color& b);
 
+// An L3D LED cube.
+// Provides methods for drawing in 3D. Controls the LED hardware.
 class Cube
 {
     private:
@@ -40,40 +58,24 @@ class Cube
     public:
         int size;
         int maxBrightness;
-        point center;
+        Point center;
         float theta, phi;
         Cube(unsigned int s, unsigned int mb);
         Cube(void);
-
-        void setVoxel(int x, int y, int z, color* col);
-        void setVoxel(point p, color* col);
-        void setPixel(uint16_t p, color* col);
-        color getVoxel(int x, int y, int z);
-        // color getVoxel(point p);
-        // void line(int x1, int y1, int z1, int x2, int y2, int z2, color* col);
-        // void line(point p1, point p2, color* col);
-        void background(color col);
-
-        color colorMap(float val, float min, float max);
-        color lerpColor(color* a, color* b, int val, int min, int max);
-
         void begin(void);
+        void setVoxel(int x, int y, int z, Color col);
+        void setVoxel(Point p, Color col);
+        void setPixel(uint16_t p, Color col);
+        Color getVoxel(int x, int y, int z);
+        Color getVoxel(Point p);
+        void line(int x1, int y1, int z1, int x2, int y2, int z2, Color col);
+        void line(Point p1, Point p2, Color col);
+        void sphere(int x, int y, int z, int r, Color col);
+        void sphere(Point p, int r, Color col);
+        void background(Color col);
+        Color colorMap(float val, float min, float max);
+        Color lerpColor(Color a, Color b, int val, int min, int max);
         void show(void);
 };
-
-// common colors
-const color black     = {0x00, 0x00, 0x00};
-const color grey      = {0x92, 0x95, 0x91};
-const color yellow    = {0xff, 0xff, 0x14};
-const color magenta   = {0xc2, 0x00, 0x78};
-const color orange    = {0xf9, 0x73, 0x06};
-const color teal      = {0x02, 0x93, 0x86};
-const color red       = {0xe5, 0x00, 0x00};
-const color brown     = {0x65, 0x37, 0x00};
-const color pink      = {0xff, 0x81, 0xc0};
-const color blue      = {0x03, 0x43, 0xdf};
-const color green     = {0x15, 0xb0, 0x1a};
-const color purple    = {0x7e, 0x1e, 0x9c};
-const color white     = {0xff, 0xff, 0xff};
 
 #endif
